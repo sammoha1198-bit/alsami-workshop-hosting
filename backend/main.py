@@ -367,6 +367,23 @@ def export_xlsx(body: ExportBody = Body(...)) -> StreamingResponse:
         headers=headers,
     )
 
+# ===================== Serve Frontend (index.html) =====================
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
+import os
+
+# تحديد المسار الصحيح لمجلد الواجهة الأمامية
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(BASE_DIR, "..", "frontend")
+
+if os.path.isdir(FRONTEND_DIR):
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+else:
+    print(f"⚠️ FRONTEND_DIR not found: {FRONTEND_DIR}")
+
+@app.get("/")
+def root_redirect():
+    return RedirectResponse(url="/index.html")
 
 # ============== نقطة تشغيل محلية اختيارية ==============
 # شغّل: uvicorn main:app --reload --host 0.0.0.0 --port 9000
