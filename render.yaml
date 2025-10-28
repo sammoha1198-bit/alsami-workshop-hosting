@@ -1,0 +1,28 @@
+services:
+  # ========= Backend (FastAPI) =========
+  - type: web
+    name: alsami-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    autoDeploy: true
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: DB_PATH
+        value: "/var/data/alsami.db"   # مسار قاعدة البيانات الدائمة
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
+
+  # ========= Frontend (Static Site) =========
+  - type: static
+    name: alsami-frontend
+    buildCommand: ""
+    publishPath: frontend
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache

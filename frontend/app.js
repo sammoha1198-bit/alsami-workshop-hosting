@@ -3,7 +3,10 @@
    ========================================================= */
 (() => {
   /* ------------------ إعداد عام ------------------ */
-  const API_BASE = 'http://localhost:9000'; // تأكد أن المنفذ يطابق الباك إند
+const API_BASE = (location.hostname.endsWith('onrender.com'))
+  ? (window.__ALSAMI_API__ || 'https://alsami-backend.onrender.com')
+  : 'http://localhost:9000';
+
 
   // جلب قالب بالـ id (مع رسالة واضحة إن كان مفقودًا)
   const T = (id) => {
