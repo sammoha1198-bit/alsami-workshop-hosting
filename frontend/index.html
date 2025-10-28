@@ -1,0 +1,182 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>السامي لإدارة الورشة</title>
+  <meta name="theme-color" content="#10b981"/>
+  <link rel="stylesheet" href="styles.css?v=1"/>
+  <!-- مكتبات طرف ثالث: BarCode + ZXing + XLSX (بديل Excel) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script defer src="https://unpkg.com/@zxing/library@0.20.0"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="title">السامي لإدارة الورشة</div>
+    <div class="status">
+      <span id="onlineText">متصل</span>
+      <span id="onlineDot" class="dot online"></span>
+    </div>
+  </header>
+
+  <!-- مكان عرض الشاشات -->
+  <main id="app" class="app"></main>
+
+  <!-- الصفحة الرئيسية -->
+  <template id="homeTpl">
+    <section class="home-center">
+      <section class="grid">
+        <button class="tile" data-link="#/search">🔍 البحث</button>
+        <button class="tile" data-link="#/engines">🛠️ المحركات</button>
+        <button class="tile" data-link="#/generators">⚡ المولدات</button>
+        <button class="tile" data-link="#/spares">🧩 قطع الغيار</button>
+        <button class="tile" data-link="#/export">📊 التصدير</button>
+        <button class="tile" data-link="#/last-engines">📈 آخر 3 محركات</button>
+        <button class="tile" data-link="#/last-generators">📈 آخر 3 مولدات</button>
+      </section>
+    </section>
+  </template>
+
+  <!-- زر رجوع في الأسفل -->
+  <template id="backBtnTpl">
+    <div class="back-bar">
+      <button class="back-btn" data-back>⬅️ رجوع</button>
+    </div>
+  </template>
+
+  <!-- قوائم المحركات -->
+  <template id="enginesMenuTpl">
+    <div class="screen">
+      <h2>🛠️ المحركات</h2>
+      <div class="grid">
+        <button class="tile" data-link="#/engines/supply">📥 التوريد</button>
+        <button class="tile" data-link="#/engines/issue">📤 الصرف</button>
+        <button class="tile" data-link="#/engines/rehab">🔧 التأهيل</button>
+        <button class="tile" data-link="#/engines/check">🧪 الفحص</button>
+        <button class="tile" data-link="#/engines/upload">⬆️ الرفع</button>
+        <button class="tile" data-link="#/engines/lathe">⚙️ المخرطة</button>
+        <button class="tile" data-link="#/engines/pump">💧 البمبات والنوزلات</button>
+        <button class="tile" data-link="#/engines/electrical">⚡ الصريمي</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- قوائم المولدات -->
+  <template id="generatorsMenuTpl">
+    <div class="screen">
+      <h2>⚡ المولدات</h2>
+      <div class="grid">
+        <button class="tile" data-link="#/generators/supply">📥 التوريد</button>
+        <button class="tile" data-link="#/generators/issue">📤 الصرف</button>
+        <button class="tile" data-link="#/generators/inspect">🧾 الرفع والفحص</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- قطع الغيار -->
+  <template id="sparesTpl">
+    <div class="screen">
+      <h2>🧩 قطع الغيار</h2>
+      <form class="card form" data-form="spares">
+        <div class="row">
+          <label>نوع الصنف</label>
+          <select name="itemType" required>
+            <option value="محرك">محرك</option>
+            <option value="مولد">مولد</option>
+          </select>
+        </div>
+        <div class="row"><label>الرقم التسلسلي/الترميز</label><input name="key" required/></div>
+        <div class="row"><label>المودل</label><input name="model"/></div>
+        <div class="row"><label>اسم القطعة</label><input name="partName" required/></div>
+        <div class="row"><label>العدد</label><input type="number" name="qty" min="1" value="1" required/></div>
+        <div class="row">
+          <label>حالة القطعة</label>
+          <select name="state"><option>جديد</option><option>مؤهل</option></select>
+        </div>
+        <div class="row"><label>ملاحظات</label><textarea name="notes"></textarea></div>
+        <div class="actions"><button class="btn primary" type="submit" data-save>حفظ</button></div>
+      </form>
+    </div>
+  </template>
+
+  <!-- البحث -->
+  <template id="searchTpl">
+    <div class="screen">
+      <h2>🔍 البحث</h2>
+      <form class="card form" data-search-form>
+        <div class="row"><label>الرقم التسلسلي/الترميز</label><input name="q" placeholder="مثال: TEST-123 أو G-001" required/></div>
+        <div class="actions">
+          <button class="btn primary" type="submit">بحث</button>
+          <button class="btn" type="button" data-scan>📷 مسح باركود</button>
+          <button class="btn" type="button" data-print hidden>🖨️ طباعة</button>
+          <button class="btn" type="button" data-export hidden>📊 تصدير Excel</button>
+          <button class="btn" type="button" data-share hidden>🔗 نسخ رابط التقرير</button>
+        </div>
+      </form>
+
+      <div class="two-cols card" id="searchTwoCols" hidden>
+        <div class="col info">
+          <h3 class="section-title">ملخص العنصر</h3>
+          <div id="infoList" class="info-list"></div>
+        </div>
+        <div class="col codes">
+          <h3 class="section-title">Barcode / QR</h3>
+          <div class="code-box">
+            <svg id="barcode"></svg>
+            <canvas id="qrCanvas" width="200" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- التصدير -->
+  <template id="exportTpl">
+    <div class="screen">
+      <h2>📊 التصدير</h2>
+      <form class="card form" data-export-form>
+        <div class="row">
+          <label>نوع التقرير</label>
+          <select name="type" required>
+            <option value="engines_all">المحركات (كامل)</option>
+            <option value="generators_all">المولدات (كامل)</option>
+            <option value="engines_lathe">المخرطة (محركات)</option>
+            <option value="engines_electrical">الصريمي (محركات)</option>
+            <option value="engines_pump">البمبات والنوزلات (محركات)</option>
+            <option value="engines_issue">الصرف (محركات)</option>
+            <option value="generators_issue">الصرف (مولدات)</option>
+          </select>
+        </div>
+        <div class="row"><label>من شهر</label><input type="month" name="from" required/></div>
+        <div class="row"><label>إلى شهر</label><input type="month" name="to" required/></div>
+        <div class="actions"><button class="btn primary" type="submit" data-save>تصدير</button></div>
+      </form>
+    </div>
+  </template>
+
+  <!-- آخر 3 -->
+  <template id="last3Tpl">
+    <div class="screen">
+      <h2 id="lastTitle"></h2>
+      <div id="lastTable"></div>
+    </div>
+  </template>
+
+  <!-- مودال الماسح بالكاميرا -->
+  <div id="scanModal" class="modal" hidden>
+    <div class="modal-content" role="dialog" aria-modal="true">
+      <video id="preview" playsinline style="width:100%;max-width:420px;border-radius:12px"></video>
+      <div class="modal-actions">
+        <button class="btn" id="closeScan" type="button">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <template id="toastTpl"><div class="toast" role="status"></div></template>
+
+  <!-- تطبيق -->
+  <script defer src="app.js?v=1"></script>
+</body>
+</html>
