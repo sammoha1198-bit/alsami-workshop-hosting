@@ -5,8 +5,16 @@
   /* ------------------ إعداد عام ------------------ */
 const API_BASE = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || 'https://alsami-app-cuop.onrender.com';
 
-  ? (window.__ALSAMI_API__ || 'https://alsami-backend.onrender.com')
+  ? (window.__ALSAMI_API__ || 'https://alsami-app-cuop.onrender.com')
   : 'http://localhost:9000';
+(() => {
+  if (!document.getElementById('app')) {
+    const m = document.createElement('main');
+    m.id = 'app';
+    document.body.appendChild(m);
+  }
+  // ... بقية الكود
+})();
 
 
   // جلب قالب بالـ id (مع رسالة واضحة إن كان مفقودًا)
@@ -228,20 +236,20 @@ function wireBack() {
 
   /* ------------------ تصدير Excel من السيرفر ------------------ */
   async function exportViaServer(headers, rows, filename) {
-    const body = { headers, rows, sheet: 'تقرير', filename, rtl: true };
-    const res = await fetch(`${API_BASE}/api/export/xlsx`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename || 'alsami.xlsx';
-    document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
-  }
+  const body = { headers, rows, sheet: 'تقرير', filename, rtl: true };
+  const res = await fetch(`${API_BASE}/api/export/xlsx`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename || 'alsami.xlsx';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+}
 
   /* ------------------ النماذج: المحركات/المولدات/القطع ------------------ */
   function renderEngineForm(kind) {

@@ -39,12 +39,10 @@ app = FastAPI(title=APP_TITLE, version=APP_VER)
 
 # ========= CORS للواجهة (يدعم file:// و localhost) =========
 ALLOWED_ORIGINS = [
-    "*",                     # يسمح لأي أصل (مع allow_credentials=False)
-    "https://alsami-app-cuop.onrender.com",                  # صفحات تفتح كـ file:// (Origin = null)
+    "https://alsami-app-cuop.onrender.com",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-    "http://localhost",
-    "http://127.0.0.1",
+    "null"
 ]
 
 app.add_middleware(
