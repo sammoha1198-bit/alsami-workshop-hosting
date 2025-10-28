@@ -235,7 +235,7 @@ function wireBack() {
   }
 
   /* ------------------ تصدير Excel من السيرفر ------------------ */
-  async function exportViaServer(headers, rows, filename) {
+ async function exportViaServer(headers, rows, filename) {
   const body = { headers, rows, sheet: 'تقرير', filename, rtl: true };
   const res = await fetch(`${API_BASE}/api/export/xlsx`, {
     method: 'POST',
