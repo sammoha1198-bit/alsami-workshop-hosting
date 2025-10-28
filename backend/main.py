@@ -36,6 +36,30 @@ APP_VER = "2.1.0"
 DB_PATH = "alsami.db"
 
 app = FastAPI(title=APP_TITLE, version=APP_VER)
+# ===== CORS (Render + Localhost) =====
+import os
+from fastapi.middleware.cors import CORSMiddleware
+
+# ضع هنا رابط الواجهة على Render (حدد نطاقك الأمامي الفعلي)
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "https://alsami-app-cuop.onrender.com")
+# في حال الواجهة على نطاق مختلف (مثلاً front مستقل)، غيّر القيمة أعلاه للرابط الصحيح للـ frontend
+
+ALLOWED_ORIGINS = [
+    FRONTEND_ORIGIN,           # الواجهة المستضافة
+    "https://*.onrender.com",  # احتياطي لنطاقات Render
+    "http://localhost:8000",   # تشغيل محلي للواجهة
+    "http://127.0.0.1:8000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,     # لازم False إذا استعملت allow_origins بنطاقات متعددة/وِلدكارد
+    allow_methods=["*"],         # GET, POST, OPTIONS إلخ (مهم للـ preflight)
+    allow_headers=["*"],         # Content-Type, Accept, Authorization, ...
+    expose_headers=["Content-Disposition"],  # حتى يقدر المتصفح يقرأ اسم الملف عند التحميل
+)
+
 
 # ========= CORS للواجهة (يدعم file:// و localhost) =========
 ALLOWED_ORIGINS = [
@@ -358,12 +382,24 @@ def export_xlsx(body: ExportBody = Body(...)) -> StreamingResponse:
         "Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}",
         "Access-Control-Expose-Headers": "Content-Disposition",
     }
+from urllib.parse import quote  # ضع الاستيراد أعلى الملف لو لم يكن موجوداً
 
-    return StreamingResponse(
-        buf,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers=headers,
-    )
+# ...
+filename = _sanitize_filename(body.filename or "alsami.xlsx")
+
+# ملف التحميل: fallback ASCII + دعم RFC 5987 باسم UTF-8 بالمشفرات
+safe_ascii = "alsami.xlsx"
+utf8_name = quote(filename)  # يصبح ASCII (percent-encoding)
+
+return StreamingResponse(
+    buf,
+    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    headers={
+        # كلاهما ASCII وبالتالي لا يسبب UnicodeEncodeError
+        "Content-Disposition": f"attachment; filename={safe_ascii}; filename*=UTF-8''{utf8_name}",
+        "Access-Control-Expose-Headers": "Content-Disposition",
+    },
+)
 
 # ===================== Serve Frontend (index.html) =====================
 from fastapi.staticfiles import StaticFiles
