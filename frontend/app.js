@@ -3,7 +3,8 @@
    ========================================================= */
 (() => {
   /* ------------------ إعداد عام ------------------ */
-const API_BASE = (location.hostname.endsWith('onrender.com'))
+const API_BASE = (window.APP_CONFIG && window.APP_CONFIG.API_BASE) || 'https://alsami-app-cuop.onrender.com';
+
   ? (window.__ALSAMI_API__ || 'https://alsami-backend.onrender.com')
   : 'http://localhost:9000';
 
@@ -35,13 +36,24 @@ const API_BASE = (location.hostname.endsWith('onrender.com'))
     );
 
   // زر رجوع ثابت أسفل الشاشة
-  function wireBack() {
-    document.querySelector('.back-bar')?.remove();
-    const back = T('backBtnTpl');
-    const btn = back.querySelector('[data-back]');
-    if (btn) btn.addEventListener('click', () => history.back());
-    document.body.appendChild(back);
-  }
+function wireBack() {
+  document.querySelector('.back-bar')?.remove();
+  const back = T('backBtnTpl');
+
+  back.querySelector('[data-back]').addEventListener('click', () => {
+    // إن لم توجد صفحات تاريخ داخل التطبيق، ارجع للصفحة الرئيسية
+    const prev = document.referrer || '';
+    const sameOrigin = prev.startsWith(location.origin);
+    if (history.length > 1 && sameOrigin) {
+      history.back();
+    } else {
+      location.hash = '#/';
+    }
+  });
+
+  document.body.appendChild(back);
+}
+
 
   /* ------------------ مؤشّر الاتصال ------------------ */
   const onlineDot = document.getElementById('onlineDot');
