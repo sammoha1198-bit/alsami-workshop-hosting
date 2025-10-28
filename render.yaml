@@ -13,9 +13,9 @@ services:
       - key: CORS_ORIGINS
         value: "*"
 
-  # ---------------- FRONTEND ----------------
-  - type: static
+  # ---------------- FRONTEND (Static Site) ----------------
+  - type: static_site
     name: alsami-frontend
-    buildCommand: ""
-    publishDir: frontend
+    buildCommand: ""        # لا حاجة لبناء — ملفات HTML/JS جاهزة
+    publishDir: frontend    # مجلد النشر
     autoDeploy: true
